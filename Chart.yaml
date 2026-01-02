@@ -1,0 +1,19 @@
+apiVersion: v2
+name: gatekey
+description: GateKey Zero-Trust VPN - A modern zero-trust VPN control plane
+type: application
+version: 0.1.0
+appVersion: "1.1.3"
+keywords:
+  - vpn
+  - zero-trust
+  - openvpn
+  - security
+  - mesh-networking
+home: https://github.com/dye-tech/GateKey
+sources:
+  - https://github.com/dye-tech/GateKey
+maintainers:
+  - name: Dye Tech
+    url: https://github.com/dye-tech
+icon: https://raw.githubusercontent.com/dye-tech/GateKey/main/docs/logo.png

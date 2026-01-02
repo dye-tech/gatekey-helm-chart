@@ -1,0 +1,68 @@
+{{- if .Values.server.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gatekey.fullname" . }}-config
+  labels:
+    {{- include "gatekey.server.labels" . | nindent 4 }}
+data:
+  gatex.yaml: |
+    server:
+      address: "{{ .Values.config.server.address }}"
+      tls_enabled: {{ .Values.config.server.tlsEnabled }}
+      cors_origins:
+        {{- range .Values.config.server.corsOrigins }}
+        - "{{ . }}"
+        {{- end }}
+      trusted_proxies:
+        {{- range .Values.config.server.trustedProxies }}
+        - "{{ . }}"
+        {{- end }}
+
+    database:
+      driver: "postgres"
+      url: "${DATABASE_URL}"
+      max_open_conns: 25
+      max_idle_conns: 5
+      conn_max_lifetime: "5m"
+
+    auth:
+      session:
+        validity: "{{ .Values.config.auth.session.validity }}"
+        cookie_name: "{{ .Values.config.auth.session.cookieName }}"
+        secure: {{ .Values.config.auth.session.secure }}
+        http_only: {{ .Values.config.auth.session.httpOnly }}
+        same_site: "{{ .Values.config.auth.session.sameSite }}"
+
+      {{- if .Values.config.auth.oidc.enabled }}
+      oidc:
+        enabled: true
+        providers:
+          {{- range .Values.config.auth.oidc.providers }}
+          - name: "{{ .name }}"
+            display_name: "{{ .displayName }}"
+            issuer: "{{ .issuer }}"
+            client_id: "${OIDC_CLIENT_ID}"
+            client_secret: "${OIDC_CLIENT_SECRET}"
+            redirect_url: "{{ .redirectUrl }}"
+            scopes:
+              {{- range .scopes }}
+              - "{{ . }}"
+              {{- end }}
+          {{- end }}
+      {{- end }}
+
+    pki:
+      key_algorithm: "{{ .Values.config.pki.keyAlgorithm }}"
+      organization: "{{ .Values.config.pki.organization }}"
+      cert_validity: "{{ .Values.config.pki.certValidity }}"
+      ca_validity: "{{ .Values.config.pki.caValidity }}"
+
+    logging:
+      level: "{{ .Values.config.logging.level }}"
+      format: "{{ .Values.config.logging.format }}"
+
+    metrics:
+      enabled: {{ .Values.config.metrics.enabled }}
+      path: "{{ .Values.config.metrics.path }}"
+{{- end }}

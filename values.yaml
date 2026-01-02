@@ -1,0 +1,329 @@
+# GateKey Helm Chart Values
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Common labels
+commonLabels: {}
+commonAnnotations: {}
+
+# GateKey Server
+server:
+  enabled: true
+  replicaCount: 1
+  
+  image:
+    repository: dyetech/gatekey-server
+    tag: "1.1.3"
+    pullPolicy: IfNotPresent
+  
+  # Service account
+  serviceAccount:
+    create: true
+    name: ""
+    annotations: {}
+  
+  # Pod settings
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+  
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+  
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 8080
+    annotations: {}
+  
+  # Ingress (optional)
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: gatekey.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  # Health checks
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  
+  # Node selection
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  # Use host network (required for VPN functionality in some setups)
+  hostNetwork: false
+  dnsPolicy: ClusterFirst
+  
+  # PKI data persistence
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    annotations: {}
+  
+  # Extra environment variables
+  extraEnv: []
+  
+  # Extra volume mounts
+  extraVolumeMounts: []
+  extraVolumes: []
+
+# GateKey Web UI
+web:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: dyetech/gatekey-web
+    tag: "1.1.3"
+    pullPolicy: IfNotPresent
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 8080
+    annotations: {}
+  
+  # Ingress (optional)
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: gatekey.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  # Health checks
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 3
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  
+  # Node selection
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# PostgreSQL Database
+postgresql:
+  # Set to false to use an external database
+  enabled: true
+  
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  
+  # Database credentials (use existingSecret in production)
+  auth:
+    username: gatekey
+    password: ""  # Auto-generated if empty
+    database: gatekey
+    existingSecret: ""  # Name of existing secret with postgres-user, postgres-password, postgres-db keys
+  
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  
+  # Persistence
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    annotations:
+      backup.velero.io/backup-volumes: "true"
+  
+  # Pod security
+  podSecurityContext:
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+  
+  # Health checks
+  livenessProbe:
+    exec:
+      command:
+        - pg_isready
+        - -U
+        - gatekey
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  readinessProbe:
+    exec:
+      command:
+        - pg_isready
+        - -U
+        - gatekey
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+  
+  # Node selection
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# External database configuration (when postgresql.enabled=false)
+externalDatabase:
+  host: ""
+  port: 5432
+  database: gatekey
+  username: gatekey
+  password: ""
+  existingSecret: ""
+  existingSecretKey: "database-url"
+
+# GateKey Configuration
+config:
+  # Server settings
+  server:
+    address: ":8080"
+    tlsEnabled: false
+    corsOrigins:
+      - "https://gatekey.example.com"
+    trustedProxies:
+      - "10.0.0.0/8"
+      - "172.16.0.0/12"
+      - "192.168.0.0/16"
+  
+  # Authentication
+  auth:
+    session:
+      validity: "12h"
+      cookieName: "gatekey_session"
+      secure: true
+      httpOnly: true
+      sameSite: "lax"
+    
+    # OIDC configuration
+    oidc:
+      enabled: false
+      providers: []
+      # Example provider:
+      # - name: "keycloak"
+      #   displayName: "Keycloak SSO"
+      #   issuer: "https://keycloak.example.com/realms/master"
+      #   clientId: ""
+      #   clientSecret: ""
+      #   redirectUrl: "https://gatekey.example.com/api/v1/auth/oidc/callback"
+      #   scopes:
+      #     - "openid"
+      #     - "profile"
+      #     - "email"
+      #     - "groups"
+  
+  # PKI settings
+  pki:
+    keyAlgorithm: "ecdsa256"
+    organization: "GateKey"
+    certValidity: "24h"
+    caValidity: "8760h"  # 1 year
+  
+  # Logging
+  logging:
+    level: "info"
+    format: "json"
+  
+  # Metrics
+  metrics:
+    enabled: true
+    path: "/metrics"
+
+# Secrets configuration
+secrets:
+  # Database URL (auto-generated from postgresql or externalDatabase if not set)
+  databaseUrl: ""
+
+  # Initial admin password (optional)
+  # If not set, a random password will be generated and stored in Kubernetes secret
+  # Retrieve with: kubectl get secret gatekey-admin-password -o jsonpath='{.data.admin-password}' | base64 -d
+  adminPassword: ""
+
+  # OIDC credentials
+  oidcClientId: ""
+  oidcClientSecret: ""
+
+  # Use existing secret instead of creating one
+  existingSecret: ""

@@ -1,0 +1,45 @@
+🔐 GateKey Zero-Trust VPN has been deployed!
+
+{{- if .Values.server.enabled }}
+
+📡 Server:
+  {{- if .Values.server.ingress.enabled }}
+  Access the API at: https://{{ (index .Values.server.ingress.hosts 0).host }}
+  {{- else }}
+  Get the server URL by running:
+    export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "gatekey.name" . }},app.kubernetes.io/component=server" -o jsonpath="{.items[0].metadata.name}")
+    kubectl port-forward $POD_NAME 8080:8080 --namespace {{ .Release.Namespace }}
+    echo "Visit http://127.0.0.1:8080"
+  {{- end }}
+{{- end }}
+
+{{- if .Values.web.enabled }}
+
+🌐 Web UI:
+  {{- if .Values.web.ingress.enabled }}
+  Access the UI at: https://{{ (index .Values.web.ingress.hosts 0).host }}
+  {{- else }}
+  Get the web UI URL by running:
+    export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "gatekey.name" . }},app.kubernetes.io/component=web" -o jsonpath="{.items[0].metadata.name}")
+    kubectl port-forward $POD_NAME 8081:80 --namespace {{ .Release.Namespace }}
+    echo "Visit http://127.0.0.1:8081"
+  {{- end }}
+{{- end }}
+
+{{- if .Values.postgresql.enabled }}
+
+🗄️ PostgreSQL:
+  Database is running in the cluster.
+  Internal connection: {{ include "gatekey.fullname" . }}-postgresql:5432
+{{- else }}
+  Using external database at: {{ .Values.externalDatabase.host }}:{{ .Values.externalDatabase.port }}
+{{- end }}
+
+📚 Documentation:
+  https://github.com/dye-tech/GateKey
+
+🛠️ CLI Installation:
+  brew tap dye-tech/gatekey
+  brew install gatekey
+
+Happy VPN-ing! 🚀

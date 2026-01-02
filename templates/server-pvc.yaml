@@ -1,0 +1,21 @@
+{{- if and .Values.server.enabled .Values.server.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "gatekey.fullname" . }}-pki-data
+  labels:
+    {{- include "gatekey.server.labels" . | nindent 4 }}
+  {{- with .Values.server.persistence.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    - {{ .Values.server.persistence.accessMode }}
+  {{- if or .Values.server.persistence.storageClass .Values.global.storageClass }}
+  storageClassName: {{ .Values.server.persistence.storageClass | default .Values.global.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.server.persistence.size }}
+{{- end }}

@@ -1,0 +1,17 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gatekey.fullname" . }}-postgresql
+  labels:
+    {{- include "gatekey.postgresql.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: postgres
+      protocol: TCP
+      name: postgres
+  selector:
+    {{- include "gatekey.postgresql.selectorLabels" . | nindent 4 }}
+{{- end }}

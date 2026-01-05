@@ -54,7 +54,7 @@ See [values.yaml](values.yaml) for the full list of configurable parameters.
 | `server.enabled` | Enable GateKey server | `true` |
 | `server.replicaCount` | Number of server replicas | `1` |
 | `server.image.repository` | Server image repository | `dyetech/gatekey-server` |
-| `server.image.tag` | Server image tag | `1.1.3` |
+| `server.image.tag` | Server image tag | `1.1.4` |
 | `web.enabled` | Enable GateKey web UI | `true` |
 | `web.replicaCount` | Number of web UI replicas | `2` |
 | `postgresql.enabled` | Deploy PostgreSQL | `true` |

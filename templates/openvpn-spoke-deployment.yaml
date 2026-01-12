@@ -37,7 +37,7 @@ spec:
           {{- end }}
           env:
             - name: GATEKEY_SERVER_URL
-              value: "http://{{ include "gatekey.fullname" . }}-server:8080"
+              value: {{ include "gatekey.serverUrl" . | quote }}
             {{- if .Values.openvpnSpoke.hubAddress }}
             - name: GATEKEY_HUB_ADDRESS
               value: {{ .Values.openvpnSpoke.hubAddress | quote }}

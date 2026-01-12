@@ -283,6 +283,18 @@ Return the proper image name
 {{- end }}
 
 {{/*
+Return the GateKey server URL
+Uses global.serverUrl if set, otherwise defaults to in-cluster service
+*/}}
+{{- define "gatekey.serverUrl" -}}
+{{- if .Values.global.serverUrl }}
+{{- .Values.global.serverUrl }}
+{{- else }}
+{{- printf "http://%s-server:8080" (include "gatekey.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
 Return the database URL
 */}}
 {{- define "gatekey.databaseUrl" -}}

@@ -41,7 +41,7 @@ spec:
               protocol: {{ .Values.openvpnGateway.service.protocol | default "UDP" }}
           env:
             - name: GATEKEY_SERVER_URL
-              value: "http://{{ include "gatekey.fullname" . }}-server:8080"
+              value: {{ include "gatekey.serverUrl" . | quote }}
             {{- with .Values.openvpnGateway.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

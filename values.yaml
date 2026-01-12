@@ -5,6 +5,9 @@ global:
   imageRegistry: ""
   imagePullSecrets: []
   storageClass: ""
+  # External server URL - set this when deploying VPN components separately
+  # If empty, uses in-cluster service: http://<release>-server:8080
+  serverUrl: ""
 
 # Common labels
 commonLabels: {}

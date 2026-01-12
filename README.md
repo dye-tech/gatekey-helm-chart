@@ -45,9 +45,24 @@ helm install gatekey gatekey/gatekey -n gatekey --create-namespace
 
 This chart supports flexible deployment patterns. You can deploy all components together or separately across different clusters.
 
+---
+
 ### Scenario 1: Full Deployment (All-in-One)
 
-Deploy the complete GateKey stack including server, web UI, database, and VPN gateways in a single cluster.
+**Use Case:** Small to medium deployments where all components run in a single Kubernetes cluster. Ideal for development, testing, or organizations with a single data center.
+
+**What Gets Deployed:**
+- GateKey Server (control plane API)
+- GateKey Web UI (admin dashboard)
+- PostgreSQL database
+- OpenVPN or WireGuard gateway
+
+**Prerequisites:**
+1. A Kubernetes cluster with LoadBalancer support (or use NodePort)
+2. Storage provisioner for PostgreSQL persistence
+3. (Optional) Ingress controller for HTTPS access to web UI
+
+**Installation:**
 
 ```bash
 helm install gatekey gatekey/gatekey -n gatekey --create-namespace \
@@ -58,36 +73,168 @@ helm install gatekey gatekey/gatekey -n gatekey --create-namespace \
   --set openvpnGateway.token="your-gateway-token"
 ```
 
-### Scenario 2: Control Plane Only
-
-Deploy just the server, web UI, and database. VPN gateways will be deployed separately.
+**With Ingress and TLS:**
 
 ```bash
 helm install gatekey gatekey/gatekey -n gatekey --create-namespace \
   --set server.enabled=true \
   --set web.enabled=true \
-  --set postgresql.enabled=true
+  --set postgresql.enabled=true \
+  --set server.ingress.enabled=true \
+  --set server.ingress.className=nginx \
+  --set server.ingress.hosts[0].host=gatekey-api.example.com \
+  --set server.ingress.hosts[0].paths[0].path=/ \
+  --set server.ingress.hosts[0].paths[0].pathType=Prefix \
+  --set web.ingress.enabled=true \
+  --set web.ingress.className=nginx \
+  --set web.ingress.hosts[0].host=gatekey.example.com \
+  --set web.ingress.hosts[0].paths[0].path=/ \
+  --set web.ingress.hosts[0].paths[0].pathType=Prefix \
+  --set openvpnGateway.enabled=true \
+  --set openvpnGateway.token="your-gateway-token"
 ```
+
+**Post-Installation:**
+1. Get the admin password: `kubectl get secret gatekey-secrets -n gatekey -o jsonpath='{.data.admin-password}' | base64 -d`
+2. Access the web UI at your ingress hostname or via port-forward: `kubectl port-forward svc/gatekey-web 8080:8080 -n gatekey`
+3. Create a gateway in the admin panel and copy the token
+4. Update the helm release with the gateway token
+
+---
+
+### Scenario 2: Control Plane Only
+
+**Use Case:** Deploy the central management server in one location (e.g., cloud), while VPN gateways are deployed separately at edge locations, branch offices, or other cloud regions.
+
+**What Gets Deployed:**
+- GateKey Server (control plane API)
+- GateKey Web UI (admin dashboard)
+- PostgreSQL database
+
+**Prerequisites:**
+1. A Kubernetes cluster for the control plane
+2. The control plane must be accessible from remote gateway locations (public IP or VPN)
+3. TLS certificate for secure communication (recommended)
+
+**Installation:**
+
+```bash
+helm install gatekey gatekey/gatekey -n gatekey --create-namespace \
+  --set server.enabled=true \
+  --set web.enabled=true \
+  --set postgresql.enabled=true \
+  --set config.server.corsOrigins[0]="https://gatekey.example.com"
+```
+
+**With External Database (Production):**
+
+```bash
+helm install gatekey gatekey/gatekey -n gatekey --create-namespace \
+  --set server.enabled=true \
+  --set web.enabled=true \
+  --set postgresql.enabled=false \
+  --set externalDatabase.host=your-rds-instance.amazonaws.com \
+  --set externalDatabase.port=5432 \
+  --set externalDatabase.database=gatekey \
+  --set externalDatabase.username=gatekey \
+  --set externalDatabase.existingSecret=db-credentials \
+  --set externalDatabase.existingSecretKey=password
+```
+
+**Post-Installation:**
+1. Configure ingress or load balancer for external access
+2. Note the server URL (e.g., `https://gatekey.example.com`) - you'll need this for remote gateways
+3. Create gateways/hubs/spokes in the admin panel and save the tokens
+
+---
 
 ### Scenario 3: OpenVPN Gateway (Remote Deployment)
 
-Deploy an OpenVPN gateway in a separate cluster that connects back to your central GateKey server.
+**Use Case:** Deploy a standalone OpenVPN gateway at a remote location (edge site, branch office, cloud region) that connects back to your central GateKey server. Users connect to this gateway to access resources at this location.
+
+**What Gets Deployed:**
+- OpenVPN Gateway only (no server, web, or database)
+
+**Prerequisites:**
+1. A running GateKey control plane (Scenario 1 or 2)
+2. Gateway token from the GateKey admin panel
+3. Network connectivity from the gateway to the control plane
+4. LoadBalancer or NodePort for VPN client connections
+
+**How to Get the Token:**
+1. Log into the GateKey admin panel
+2. Navigate to Gateways → Add Gateway
+3. Select "OpenVPN" as the type
+4. Configure the gateway settings (name, allowed networks, etc.)
+5. Copy the generated token
+
+**Installation:**
 
 ```bash
-# First, get the gateway token from the GateKey admin panel
-
 helm install gatekey-gateway gatekey/gatekey -n gatekey --create-namespace \
   --set server.enabled=false \
   --set web.enabled=false \
   --set postgresql.enabled=false \
   --set global.serverUrl=https://gatekey.example.com \
   --set openvpnGateway.enabled=true \
-  --set openvpnGateway.token="your-gateway-token"
+  --set openvpnGateway.token="gk_xxxxxxxxxxxxxxxx"
 ```
+
+**With Custom Service Configuration:**
+
+```bash
+helm install gatekey-gateway gatekey/gatekey -n gatekey --create-namespace \
+  --set server.enabled=false \
+  --set web.enabled=false \
+  --set postgresql.enabled=false \
+  --set global.serverUrl=https://gatekey.example.com \
+  --set openvpnGateway.enabled=true \
+  --set openvpnGateway.token="gk_xxxxxxxxxxxxxxxx" \
+  --set openvpnGateway.service.type=NodePort \
+  --set openvpnGateway.service.port=1194 \
+  --set openvpnGateway.service.protocol=UDP
+```
+
+**Using a Secret for the Token (Recommended for Production):**
+
+```bash
+# Create the secret first
+kubectl create secret generic gateway-token \
+  --from-literal=token="gk_xxxxxxxxxxxxxxxx" \
+  -n gatekey
+
+# Install with secret reference
+helm install gatekey-gateway gatekey/gatekey -n gatekey \
+  --set server.enabled=false \
+  --set web.enabled=false \
+  --set postgresql.enabled=false \
+  --set global.serverUrl=https://gatekey.example.com \
+  --set openvpnGateway.enabled=true \
+  --set openvpnGateway.existingSecret=gateway-token \
+  --set openvpnGateway.existingSecretKey=token
+```
+
+**Post-Installation:**
+1. Get the gateway's external IP: `kubectl get svc -n gatekey`
+2. Update DNS or inform users of the gateway address
+3. The gateway will automatically register with the control plane
+4. Users can download VPN configs from the web UI
+
+---
 
 ### Scenario 4: WireGuard Gateway (Remote Deployment)
 
-Deploy a WireGuard gateway in a separate cluster.
+**Use Case:** Deploy a WireGuard gateway for better performance and modern protocol support. WireGuard offers faster connections, lower latency, and simpler configuration compared to OpenVPN.
+
+**What Gets Deployed:**
+- WireGuard Gateway only
+
+**Prerequisites:**
+1. A running GateKey control plane
+2. Gateway token from the admin panel (select WireGuard type)
+3. The Kubernetes nodes must support WireGuard (kernel module)
+
+**Installation:**
 
 ```bash
 helm install gatekey-wg-gateway gatekey/gatekey -n gatekey --create-namespace \
@@ -96,12 +243,66 @@ helm install gatekey-wg-gateway gatekey/gatekey -n gatekey --create-namespace \
   --set postgresql.enabled=false \
   --set global.serverUrl=https://gatekey.example.com \
   --set wireguardGateway.enabled=true \
-  --set wireguardGateway.token="your-gateway-token"
+  --set wireguardGateway.token="gk_xxxxxxxxxxxxxxxx"
 ```
+
+**With Resource Limits:**
+
+```bash
+helm install gatekey-wg-gateway gatekey/gatekey -n gatekey --create-namespace \
+  --set server.enabled=false \
+  --set web.enabled=false \
+  --set postgresql.enabled=false \
+  --set global.serverUrl=https://gatekey.example.com \
+  --set wireguardGateway.enabled=true \
+  --set wireguardGateway.token="gk_xxxxxxxxxxxxxxxx" \
+  --set wireguardGateway.resources.requests.cpu=100m \
+  --set wireguardGateway.resources.requests.memory=128Mi \
+  --set wireguardGateway.resources.limits.cpu=500m \
+  --set wireguardGateway.resources.limits.memory=256Mi
+```
+
+**Post-Installation:**
+1. Verify the gateway is running: `kubectl get pods -n gatekey`
+2. Check logs for successful registration: `kubectl logs -n gatekey -l app.kubernetes.io/component=wireguard-gateway`
+3. The gateway should appear as "online" in the admin panel
+
+---
 
 ### Scenario 5: OpenVPN Mesh Hub
 
-Deploy an OpenVPN mesh hub that spoke gateways connect to for site-to-site networking.
+**Use Case:** Deploy a central hub for site-to-site mesh networking. Branch offices (spokes) connect to this hub to communicate with each other and access shared resources. The hub acts as a routing point for inter-site traffic.
+
+**What Gets Deployed:**
+- OpenVPN Hub (mesh networking central node)
+
+**Architecture:**
+```
+                    ┌─────────────┐
+                    │   Hub       │
+                    │ (This Node) │
+                    └──────┬──────┘
+           ┌───────────────┼───────────────┐
+           │               │               │
+      ┌────▼────┐    ┌─────▼─────┐   ┌─────▼─────┐
+      │ Spoke A │    │  Spoke B  │   │  Spoke C  │
+      │ (Site 1)│    │ (Site 2)  │   │ (Site 3)  │
+      └─────────┘    └───────────┘   └───────────┘
+```
+
+**Prerequisites:**
+1. A running GateKey control plane
+2. Hub token from the admin panel (Mesh → Add Hub)
+3. Static IP or DNS name for spoke connections
+4. Network planning: Define the mesh subnet and site-specific subnets
+
+**How to Get the Token:**
+1. Log into the GateKey admin panel
+2. Navigate to Mesh Networking → Add Hub
+3. Configure hub settings (name, mesh subnet, local networks)
+4. Copy the generated token
+
+**Installation:**
 
 ```bash
 helm install gatekey-hub gatekey/gatekey -n gatekey --create-namespace \
@@ -110,12 +311,50 @@ helm install gatekey-hub gatekey/gatekey -n gatekey --create-namespace \
   --set postgresql.enabled=false \
   --set global.serverUrl=https://gatekey.example.com \
   --set openvpnHub.enabled=true \
-  --set openvpnHub.token="your-hub-token"
+  --set openvpnHub.token="gk_hub_xxxxxxxxxxxxxxxx"
 ```
+
+**With Static IP (Cloud Provider):**
+
+```bash
+helm install gatekey-hub gatekey/gatekey -n gatekey --create-namespace \
+  --set server.enabled=false \
+  --set web.enabled=false \
+  --set postgresql.enabled=false \
+  --set global.serverUrl=https://gatekey.example.com \
+  --set openvpnHub.enabled=true \
+  --set openvpnHub.token="gk_hub_xxxxxxxxxxxxxxxx" \
+  --set openvpnHub.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-eip-allocations"=eipalloc-xxxxxxxxx
+```
+
+**Post-Installation:**
+1. Get the hub's external address: `kubectl get svc gatekey-hub-openvpn-hub -n gatekey`
+2. Note this address - spokes will need it to connect
+3. Create spoke configurations in the admin panel for each site
+
+---
 
 ### Scenario 6: OpenVPN Mesh Spoke
 
-Deploy an OpenVPN spoke that connects to a hub for mesh networking.
+**Use Case:** Deploy a spoke node at a branch office or remote site that connects to a mesh hub. This enables site-to-site connectivity, allowing resources at this site to be accessed from other sites in the mesh.
+
+**What Gets Deployed:**
+- OpenVPN Spoke (mesh networking edge node)
+
+**Prerequisites:**
+1. A running GateKey control plane
+2. A running mesh hub (Scenario 5)
+3. Spoke token from the admin panel
+4. Hub address and port
+5. Local network CIDR that this spoke will advertise
+
+**How to Get the Token:**
+1. Log into the GateKey admin panel
+2. Navigate to Mesh Networking → Your Hub → Add Spoke
+3. Configure spoke settings (name, local networks to advertise)
+4. Copy the generated token and note the hub address
+
+**Installation:**
 
 ```bash
 helm install gatekey-spoke gatekey/gatekey -n gatekey --create-namespace \
@@ -124,14 +363,48 @@ helm install gatekey-spoke gatekey/gatekey -n gatekey --create-namespace \
   --set postgresql.enabled=false \
   --set global.serverUrl=https://gatekey.example.com \
   --set openvpnSpoke.enabled=true \
-  --set openvpnSpoke.token="your-spoke-token" \
+  --set openvpnSpoke.token="gk_spoke_xxxxxxxxxxxxxxxx" \
   --set openvpnSpoke.hubAddress=hub.example.com \
   --set openvpnSpoke.hubPort=1194
 ```
 
+**With Node Selector (Deploy to Specific Node):**
+
+```bash
+helm install gatekey-spoke gatekey/gatekey -n gatekey --create-namespace \
+  --set server.enabled=false \
+  --set web.enabled=false \
+  --set postgresql.enabled=false \
+  --set global.serverUrl=https://gatekey.example.com \
+  --set openvpnSpoke.enabled=true \
+  --set openvpnSpoke.token="gk_spoke_xxxxxxxxxxxxxxxx" \
+  --set openvpnSpoke.hubAddress=hub.example.com \
+  --set openvpnSpoke.hubPort=1194 \
+  --set openvpnSpoke.nodeSelector."kubernetes\.io/hostname"=edge-node-1
+```
+
+**Post-Installation:**
+1. Check spoke connection status: `kubectl logs -n gatekey -l app.kubernetes.io/component=openvpn-spoke`
+2. Verify in admin panel that the spoke shows as "connected"
+3. Test connectivity to other sites in the mesh
+4. Routes should be automatically propagated to other spokes
+
+---
+
 ### Scenario 7: WireGuard Mesh Hub
 
-Deploy a WireGuard mesh hub.
+**Use Case:** Deploy a WireGuard-based mesh hub for better performance in site-to-site networking. WireGuard's efficiency makes it ideal for high-throughput mesh networks.
+
+**What Gets Deployed:**
+- WireGuard Hub (mesh networking central node)
+
+**Prerequisites:**
+1. A running GateKey control plane
+2. Hub token from the admin panel (Mesh → Add Hub, select WireGuard)
+3. Kubernetes nodes with WireGuard kernel support
+4. Static IP or DNS name for spoke connections
+
+**Installation:**
 
 ```bash
 helm install gatekey-wg-hub gatekey/gatekey -n gatekey --create-namespace \
@@ -140,12 +413,46 @@ helm install gatekey-wg-hub gatekey/gatekey -n gatekey --create-namespace \
   --set postgresql.enabled=false \
   --set global.serverUrl=https://gatekey.example.com \
   --set wireguardHub.enabled=true \
-  --set wireguardHub.token="your-hub-token"
+  --set wireguardHub.token="gk_hub_xxxxxxxxxxxxxxxx"
 ```
+
+**With Tolerations (Run on Dedicated Nodes):**
+
+```bash
+helm install gatekey-wg-hub gatekey/gatekey -n gatekey --create-namespace \
+  --set server.enabled=false \
+  --set web.enabled=false \
+  --set postgresql.enabled=false \
+  --set global.serverUrl=https://gatekey.example.com \
+  --set wireguardHub.enabled=true \
+  --set wireguardHub.token="gk_hub_xxxxxxxxxxxxxxxx" \
+  --set wireguardHub.tolerations[0].key=dedicated \
+  --set wireguardHub.tolerations[0].value=vpn \
+  --set wireguardHub.tolerations[0].effect=NoSchedule
+```
+
+**Post-Installation:**
+1. Get the hub's external address for WireGuard (UDP 51820)
+2. Verify hub status in the admin panel
+3. Create WireGuard spoke configurations for each site
+
+---
 
 ### Scenario 8: WireGuard Mesh Spoke
 
-Deploy a WireGuard spoke that connects to a hub.
+**Use Case:** Deploy a WireGuard spoke at a remote site for high-performance site-to-site connectivity. Ideal for sites with high bandwidth requirements or latency-sensitive applications.
+
+**What Gets Deployed:**
+- WireGuard Spoke (mesh networking edge node)
+
+**Prerequisites:**
+1. A running GateKey control plane
+2. A running WireGuard mesh hub (Scenario 7)
+3. Spoke token from the admin panel
+4. Hub address and port (default: 51820)
+5. WireGuard kernel support on the node
+
+**Installation:**
 
 ```bash
 helm install gatekey-wg-spoke gatekey/gatekey -n gatekey --create-namespace \
@@ -154,10 +461,56 @@ helm install gatekey-wg-spoke gatekey/gatekey -n gatekey --create-namespace \
   --set postgresql.enabled=false \
   --set global.serverUrl=https://gatekey.example.com \
   --set wireguardSpoke.enabled=true \
-  --set wireguardSpoke.token="your-spoke-token" \
+  --set wireguardSpoke.token="gk_spoke_xxxxxxxxxxxxxxxx" \
   --set wireguardSpoke.hubAddress=wg-hub.example.com \
   --set wireguardSpoke.hubPort=51820
 ```
+
+**With All Options (Production Example):**
+
+```bash
+# Create secret for token
+kubectl create secret generic wg-spoke-token \
+  --from-literal=token="gk_spoke_xxxxxxxxxxxxxxxx" \
+  -n gatekey
+
+# Install spoke
+helm install gatekey-wg-spoke gatekey/gatekey -n gatekey \
+  --set server.enabled=false \
+  --set web.enabled=false \
+  --set postgresql.enabled=false \
+  --set global.serverUrl=https://gatekey.example.com \
+  --set wireguardSpoke.enabled=true \
+  --set wireguardSpoke.existingSecret=wg-spoke-token \
+  --set wireguardSpoke.existingSecretKey=token \
+  --set wireguardSpoke.hubAddress=wg-hub.example.com \
+  --set wireguardSpoke.hubPort=51820 \
+  --set wireguardSpoke.resources.requests.cpu=50m \
+  --set wireguardSpoke.resources.requests.memory=64Mi \
+  --set wireguardSpoke.resources.limits.cpu=200m \
+  --set wireguardSpoke.resources.limits.memory=128Mi
+```
+
+**Post-Installation:**
+1. Verify spoke connection: `kubectl logs -n gatekey -l app.kubernetes.io/component=wireguard-spoke`
+2. Check handshake status in logs (should see successful handshake with hub)
+3. Test connectivity to hub and other spokes
+4. Monitor latency and throughput in the admin panel
+
+---
+
+### Scenario Comparison
+
+| Scenario | Components | Use Case | Network Requirements |
+|----------|------------|----------|---------------------|
+| 1. Full | Server, Web, DB, Gateway | Single cluster, dev/test | LoadBalancer or Ingress |
+| 2. Control Plane | Server, Web, DB | Central management | Accessible from all gateways |
+| 3. OpenVPN GW | Gateway only | Remote VPN access | UDP 1194 inbound |
+| 4. WireGuard GW | Gateway only | High-performance VPN | UDP 51820 inbound |
+| 5. OpenVPN Hub | Hub only | Mesh central point | UDP 1194 inbound |
+| 6. OpenVPN Spoke | Spoke only | Mesh edge site | Outbound to hub |
+| 7. WireGuard Hub | Hub only | High-perf mesh | UDP 51820 inbound |
+| 8. WireGuard Spoke | Spoke only | High-perf edge | Outbound to hub |
 
 ## Token Authentication
 

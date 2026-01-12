@@ -38,6 +38,18 @@ spec:
           env:
             - name: GATEKEY_SERVER_URL
               value: {{ include "gatekey.serverUrl" . | quote }}
+            {{- if or .Values.openvpnSpoke.token .Values.openvpnSpoke.existingSecret }}
+            - name: GATEKEY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.openvpnSpoke.existingSecret }}
+                  name: {{ .Values.openvpnSpoke.existingSecret }}
+                  key: {{ .Values.openvpnSpoke.existingSecretKey }}
+                  {{- else }}
+                  name: {{ include "gatekey.fullname" . }}-vpn-tokens
+                  key: openvpn-spoke-token
+                  {{- end }}
+            {{- end }}
             {{- if .Values.openvpnSpoke.hubAddress }}
             - name: GATEKEY_HUB_ADDRESS
               value: {{ .Values.openvpnSpoke.hubAddress | quote }}

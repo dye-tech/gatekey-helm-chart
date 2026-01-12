@@ -42,6 +42,18 @@ spec:
           env:
             - name: GATEKEY_SERVER_URL
               value: {{ include "gatekey.serverUrl" . | quote }}
+            {{- if or .Values.wireguardHub.token .Values.wireguardHub.existingSecret }}
+            - name: GATEKEY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.wireguardHub.existingSecret }}
+                  name: {{ .Values.wireguardHub.existingSecret }}
+                  key: {{ .Values.wireguardHub.existingSecretKey }}
+                  {{- else }}
+                  name: {{ include "gatekey.fullname" . }}-vpn-tokens
+                  key: wireguard-hub-token
+                  {{- end }}
+            {{- end }}
             {{- with .Values.wireguardHub.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

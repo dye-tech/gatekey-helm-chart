@@ -38,6 +38,18 @@ spec:
           env:
             - name: GATEKEY_SERVER_URL
               value: {{ include "gatekey.serverUrl" . | quote }}
+            {{- if or .Values.wireguardSpoke.token .Values.wireguardSpoke.existingSecret }}
+            - name: GATEKEY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.wireguardSpoke.existingSecret }}
+                  name: {{ .Values.wireguardSpoke.existingSecret }}
+                  key: {{ .Values.wireguardSpoke.existingSecretKey }}
+                  {{- else }}
+                  name: {{ include "gatekey.fullname" . }}-vpn-tokens
+                  key: wireguard-spoke-token
+                  {{- end }}
+            {{- end }}
             {{- if .Values.wireguardSpoke.hubAddress }}
             - name: GATEKEY_HUB_ADDRESS
               value: {{ .Values.wireguardSpoke.hubAddress | quote }}

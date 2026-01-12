@@ -42,6 +42,18 @@ spec:
           env:
             - name: GATEKEY_SERVER_URL
               value: {{ include "gatekey.serverUrl" . | quote }}
+            {{- if or .Values.openvpnGateway.token .Values.openvpnGateway.existingSecret }}
+            - name: GATEKEY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.openvpnGateway.existingSecret }}
+                  name: {{ .Values.openvpnGateway.existingSecret }}
+                  key: {{ .Values.openvpnGateway.existingSecretKey }}
+                  {{- else }}
+                  name: {{ include "gatekey.fullname" . }}-vpn-tokens
+                  key: openvpn-gateway-token
+                  {{- end }}
+            {{- end }}
             {{- with .Values.openvpnGateway.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

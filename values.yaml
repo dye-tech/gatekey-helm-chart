@@ -189,6 +189,12 @@ openvpnGateway:
     tag: "1.2.2"
     pullPolicy: IfNotPresent
 
+  # Gateway authentication token (from GateKey server admin panel)
+  # Can be set directly or via existing secret
+  token: ""
+  existingSecret: ""
+  existingSecretKey: "gateway-token"
+
   # Service configuration
   service:
     type: LoadBalancer
@@ -231,6 +237,11 @@ openvpnHub:
     repository: dyetech/gatekey-hub
     tag: "1.2.2"
     pullPolicy: IfNotPresent
+
+  # Hub authentication token (from GateKey server admin panel)
+  token: ""
+  existingSecret: ""
+  existingSecretKey: "hub-token"
 
   # Service configuration
   service:
@@ -275,6 +286,11 @@ openvpnSpoke:
     tag: "1.2.2"
     pullPolicy: IfNotPresent
 
+  # Spoke authentication token (from GateKey server admin panel)
+  token: ""
+  existingSecret: ""
+  existingSecretKey: "spoke-token"
+
   # Hub connection settings
   hubAddress: ""
   hubPort: 1194
@@ -314,6 +330,11 @@ wireguardGateway:
     repository: dyetech/gatekey-wireguard-gateway
     tag: "1.2.2"
     pullPolicy: IfNotPresent
+
+  # Gateway authentication token (from GateKey server admin panel)
+  token: ""
+  existingSecret: ""
+  existingSecretKey: "gateway-token"
 
   # Service configuration
   service:
@@ -358,6 +379,11 @@ wireguardHub:
     tag: "1.2.2"
     pullPolicy: IfNotPresent
 
+  # Hub authentication token (from GateKey server admin panel)
+  token: ""
+  existingSecret: ""
+  existingSecretKey: "hub-token"
+
   # Service configuration
   service:
     type: LoadBalancer
@@ -400,6 +426,11 @@ wireguardSpoke:
     repository: dyetech/gatekey-wireguard-mesh-gateway
     tag: "1.2.2"
     pullPolicy: IfNotPresent
+
+  # Spoke authentication token (from GateKey server admin panel)
+  token: ""
+  existingSecret: ""
+  existingSecretKey: "spoke-token"
 
   # Hub connection settings
   hubAddress: ""

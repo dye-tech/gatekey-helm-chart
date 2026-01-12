@@ -26,6 +26,54 @@ All images include:
 - Helm 3.0+
 - PV provisioner support in the underlying infrastructure (for persistence)
 
+## Network Requirements
+
+Several components require external network exposure to function. These are **hard dependencies** - without proper network configuration, these components will not work.
+
+### Components Requiring Inbound Connections
+
+| Component | Port | Protocol | Why |
+|-----------|------|----------|-----|
+| **Web UI** | 8080 | TCP | Admin dashboard access. Requires Ingress, LoadBalancer, or NodePort. |
+| **Server API** | 8080 | TCP | Control plane API. Must be accessible from all VPN components (gateways, hubs, spokes). |
+| **OpenVPN Gateway** | 1194 | UDP | VPN clients connect here. Requires LoadBalancer or NodePort with external IP. |
+| **OpenVPN Hub** | 1194 | UDP | Mesh spokes connect here. Requires LoadBalancer or NodePort with external IP. |
+| **WireGuard Gateway** | 51820 | UDP | VPN clients connect here. Requires LoadBalancer or NodePort with external IP. |
+| **WireGuard Hub** | 51820 | UDP | Mesh spokes connect here. Requires LoadBalancer or NodePort with external IP. |
+
+### Components Requiring Outbound Connections Only
+
+| Component | Connects To | Why |
+|-----------|-------------|-----|
+| **OpenVPN Spoke** | Hub (UDP 1194) | Initiates connection to mesh hub |
+| **WireGuard Spoke** | Hub (UDP 51820) | Initiates connection to mesh hub |
+
+### Service Type Options
+
+The default service type is `LoadBalancer`, which works with cloud providers (AWS, GCP, Azure). For other environments:
+
+```yaml
+# NodePort - For bare metal or when using external load balancer
+openvpnGateway:
+  service:
+    type: NodePort
+    nodePort: 31194  # Optional: specify port (30000-32767)
+
+# ClusterIP - Only if clients are within the cluster (rare)
+openvpnGateway:
+  service:
+    type: ClusterIP
+```
+
+### Firewall Rules
+
+Ensure your network/cloud firewall allows:
+
+- **Inbound UDP 1194** - OpenVPN gateways and hubs
+- **Inbound UDP 51820** - WireGuard gateways and hubs
+- **Inbound TCP 443/8080** - Web UI and API (depending on your ingress setup)
+- **Outbound HTTPS** - VPN components need to reach the control plane API
+
 ## Installation
 
 ### Add the Helm repository

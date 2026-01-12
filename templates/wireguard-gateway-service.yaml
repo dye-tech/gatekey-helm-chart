@@ -1,0 +1,21 @@
+{{- if .Values.wireguardGateway.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gatekey.fullname" . }}-wireguard-gateway
+  labels:
+    {{- include "gatekey.wireguardGateway.labels" . | nindent 4 }}
+  {{- with .Values.wireguardGateway.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.wireguardGateway.service.type }}
+  ports:
+    - port: {{ .Values.wireguardGateway.service.port }}
+      targetPort: wireguard
+      protocol: {{ .Values.wireguardGateway.service.protocol | default "UDP" }}
+      name: wireguard
+  selector:
+    {{- include "gatekey.wireguardGateway.selectorLabels" . | nindent 4 }}
+{{- end }}

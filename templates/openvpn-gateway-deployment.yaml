@@ -1,0 +1,62 @@
+{{- if .Values.openvpnGateway.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gatekey.fullname" . }}-openvpn-gateway
+  labels:
+    {{- include "gatekey.openvpnGateway.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.openvpnGateway.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gatekey.openvpnGateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "gatekey.openvpnGateway.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openvpnGateway.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: openvpn-gateway
+          image: {{ include "gatekey.openvpnGateway.image" . }}
+          imagePullPolicy: {{ .Values.openvpnGateway.image.pullPolicy }}
+          {{- with .Values.openvpnGateway.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: openvpn
+              containerPort: 1194
+              protocol: {{ .Values.openvpnGateway.service.protocol | default "UDP" }}
+          env:
+            - name: GATEKEY_SERVER_URL
+              value: "http://{{ include "gatekey.fullname" . }}-server:8080"
+            {{- with .Values.openvpnGateway.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.openvpnGateway.resources | nindent 12 }}
+      {{- with .Values.openvpnGateway.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openvpnGateway.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openvpnGateway.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

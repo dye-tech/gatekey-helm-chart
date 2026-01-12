@@ -1,0 +1,66 @@
+{{- if .Values.wireguardSpoke.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gatekey.fullname" . }}-wireguard-spoke
+  labels:
+    {{- include "gatekey.wireguardSpoke.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.wireguardSpoke.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gatekey.wireguardSpoke.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "gatekey.wireguardSpoke.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.wireguardSpoke.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: wireguard-spoke
+          image: {{ include "gatekey.wireguardSpoke.image" . }}
+          imagePullPolicy: {{ .Values.wireguardSpoke.image.pullPolicy }}
+          {{- with .Values.wireguardSpoke.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: GATEKEY_SERVER_URL
+              value: "http://{{ include "gatekey.fullname" . }}-server:8080"
+            {{- if .Values.wireguardSpoke.hubAddress }}
+            - name: GATEKEY_HUB_ADDRESS
+              value: {{ .Values.wireguardSpoke.hubAddress | quote }}
+            {{- end }}
+            {{- if .Values.wireguardSpoke.hubPort }}
+            - name: GATEKEY_HUB_PORT
+              value: {{ .Values.wireguardSpoke.hubPort | quote }}
+            {{- end }}
+            {{- with .Values.wireguardSpoke.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.wireguardSpoke.resources | nindent 12 }}
+      {{- with .Values.wireguardSpoke.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.wireguardSpoke.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.wireguardSpoke.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

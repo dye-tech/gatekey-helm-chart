@@ -1,0 +1,66 @@
+{{- if .Values.openvpnSpoke.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gatekey.fullname" . }}-openvpn-spoke
+  labels:
+    {{- include "gatekey.openvpnSpoke.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.openvpnSpoke.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gatekey.openvpnSpoke.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "gatekey.openvpnSpoke.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openvpnSpoke.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: openvpn-spoke
+          image: {{ include "gatekey.openvpnSpoke.image" . }}
+          imagePullPolicy: {{ .Values.openvpnSpoke.image.pullPolicy }}
+          {{- with .Values.openvpnSpoke.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: GATEKEY_SERVER_URL
+              value: "http://{{ include "gatekey.fullname" . }}-server:8080"
+            {{- if .Values.openvpnSpoke.hubAddress }}
+            - name: GATEKEY_HUB_ADDRESS
+              value: {{ .Values.openvpnSpoke.hubAddress | quote }}
+            {{- end }}
+            {{- if .Values.openvpnSpoke.hubPort }}
+            - name: GATEKEY_HUB_PORT
+              value: {{ .Values.openvpnSpoke.hubPort | quote }}
+            {{- end }}
+            {{- with .Values.openvpnSpoke.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.openvpnSpoke.resources | nindent 12 }}
+      {{- with .Values.openvpnSpoke.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openvpnSpoke.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openvpnSpoke.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

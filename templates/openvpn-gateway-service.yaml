@@ -1,0 +1,21 @@
+{{- if .Values.openvpnGateway.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gatekey.fullname" . }}-openvpn-gateway
+  labels:
+    {{- include "gatekey.openvpnGateway.labels" . | nindent 4 }}
+  {{- with .Values.openvpnGateway.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.openvpnGateway.service.type }}
+  ports:
+    - port: {{ .Values.openvpnGateway.service.port }}
+      targetPort: openvpn
+      protocol: {{ .Values.openvpnGateway.service.protocol | default "UDP" }}
+      name: openvpn
+  selector:
+    {{- include "gatekey.openvpnGateway.selectorLabels" . | nindent 4 }}
+{{- end }}

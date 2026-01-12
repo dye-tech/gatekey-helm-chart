@@ -1,0 +1,21 @@
+{{- if .Values.wireguardHub.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gatekey.fullname" . }}-wireguard-hub
+  labels:
+    {{- include "gatekey.wireguardHub.labels" . | nindent 4 }}
+  {{- with .Values.wireguardHub.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.wireguardHub.service.type }}
+  ports:
+    - port: {{ .Values.wireguardHub.service.port }}
+      targetPort: wireguard
+      protocol: {{ .Values.wireguardHub.service.protocol | default "UDP" }}
+      name: wireguard
+  selector:
+    {{- include "gatekey.wireguardHub.selectorLabels" . | nindent 4 }}
+{{- end }}

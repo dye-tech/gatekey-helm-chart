@@ -1,0 +1,62 @@
+{{- if .Values.wireguardHub.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gatekey.fullname" . }}-wireguard-hub
+  labels:
+    {{- include "gatekey.wireguardHub.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.wireguardHub.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gatekey.wireguardHub.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "gatekey.wireguardHub.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.wireguardHub.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: wireguard-hub
+          image: {{ include "gatekey.wireguardHub.image" . }}
+          imagePullPolicy: {{ .Values.wireguardHub.image.pullPolicy }}
+          {{- with .Values.wireguardHub.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: wireguard
+              containerPort: 51820
+              protocol: {{ .Values.wireguardHub.service.protocol | default "UDP" }}
+          env:
+            - name: GATEKEY_SERVER_URL
+              value: "http://{{ include "gatekey.fullname" . }}-server:8080"
+            {{- with .Values.wireguardHub.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.wireguardHub.resources | nindent 12 }}
+      {{- with .Values.wireguardHub.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.wireguardHub.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.wireguardHub.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

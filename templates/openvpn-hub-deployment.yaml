@@ -1,0 +1,62 @@
+{{- if .Values.openvpnHub.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gatekey.fullname" . }}-openvpn-hub
+  labels:
+    {{- include "gatekey.openvpnHub.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.openvpnHub.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gatekey.openvpnHub.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "gatekey.openvpnHub.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openvpnHub.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: openvpn-hub
+          image: {{ include "gatekey.openvpnHub.image" . }}
+          imagePullPolicy: {{ .Values.openvpnHub.image.pullPolicy }}
+          {{- with .Values.openvpnHub.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: openvpn
+              containerPort: 1194
+              protocol: {{ .Values.openvpnHub.service.protocol | default "UDP" }}
+          env:
+            - name: GATEKEY_SERVER_URL
+              value: "http://{{ include "gatekey.fullname" . }}-server:8080"
+            {{- with .Values.openvpnHub.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.openvpnHub.resources | nindent 12 }}
+      {{- with .Values.openvpnHub.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openvpnHub.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.openvpnHub.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

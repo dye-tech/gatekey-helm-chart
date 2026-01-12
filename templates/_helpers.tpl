@@ -92,6 +92,84 @@ app.kubernetes.io/component: postgresql
 {{- end }}
 
 {{/*
+OpenVPN Gateway labels
+*/}}
+{{- define "gatekey.openvpnGateway.labels" -}}
+{{ include "gatekey.labels" . }}
+app.kubernetes.io/component: openvpn-gateway
+{{- end }}
+
+{{- define "gatekey.openvpnGateway.selectorLabels" -}}
+{{ include "gatekey.selectorLabels" . }}
+app.kubernetes.io/component: openvpn-gateway
+{{- end }}
+
+{{/*
+OpenVPN Hub labels
+*/}}
+{{- define "gatekey.openvpnHub.labels" -}}
+{{ include "gatekey.labels" . }}
+app.kubernetes.io/component: openvpn-hub
+{{- end }}
+
+{{- define "gatekey.openvpnHub.selectorLabels" -}}
+{{ include "gatekey.selectorLabels" . }}
+app.kubernetes.io/component: openvpn-hub
+{{- end }}
+
+{{/*
+OpenVPN Spoke labels
+*/}}
+{{- define "gatekey.openvpnSpoke.labels" -}}
+{{ include "gatekey.labels" . }}
+app.kubernetes.io/component: openvpn-spoke
+{{- end }}
+
+{{- define "gatekey.openvpnSpoke.selectorLabels" -}}
+{{ include "gatekey.selectorLabels" . }}
+app.kubernetes.io/component: openvpn-spoke
+{{- end }}
+
+{{/*
+WireGuard Gateway labels
+*/}}
+{{- define "gatekey.wireguardGateway.labels" -}}
+{{ include "gatekey.labels" . }}
+app.kubernetes.io/component: wireguard-gateway
+{{- end }}
+
+{{- define "gatekey.wireguardGateway.selectorLabels" -}}
+{{ include "gatekey.selectorLabels" . }}
+app.kubernetes.io/component: wireguard-gateway
+{{- end }}
+
+{{/*
+WireGuard Hub labels
+*/}}
+{{- define "gatekey.wireguardHub.labels" -}}
+{{ include "gatekey.labels" . }}
+app.kubernetes.io/component: wireguard-hub
+{{- end }}
+
+{{- define "gatekey.wireguardHub.selectorLabels" -}}
+{{ include "gatekey.selectorLabels" . }}
+app.kubernetes.io/component: wireguard-hub
+{{- end }}
+
+{{/*
+WireGuard Spoke labels
+*/}}
+{{- define "gatekey.wireguardSpoke.labels" -}}
+{{ include "gatekey.labels" . }}
+app.kubernetes.io/component: wireguard-spoke
+{{- end }}
+
+{{- define "gatekey.wireguardSpoke.selectorLabels" -}}
+{{ include "gatekey.selectorLabels" . }}
+app.kubernetes.io/component: wireguard-spoke
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "gatekey.serviceAccountName" -}}
@@ -131,6 +209,72 @@ Return the proper image name
 {{- $registryName := .Values.global.imageRegistry | default "" -}}
 {{- $repositoryName := .Values.postgresql.image.repository -}}
 {{- $tag := .Values.postgresql.image.tag -}}
+{{- if $registryName }}
+{{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
+{{- else }}
+{{- printf "%s:%s" $repositoryName $tag -}}
+{{- end }}
+{{- end }}
+
+{{- define "gatekey.openvpnGateway.image" -}}
+{{- $registryName := .Values.global.imageRegistry | default "" -}}
+{{- $repositoryName := .Values.openvpnGateway.image.repository -}}
+{{- $tag := .Values.openvpnGateway.image.tag | default .Chart.AppVersion -}}
+{{- if $registryName }}
+{{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
+{{- else }}
+{{- printf "%s:%s" $repositoryName $tag -}}
+{{- end }}
+{{- end }}
+
+{{- define "gatekey.openvpnHub.image" -}}
+{{- $registryName := .Values.global.imageRegistry | default "" -}}
+{{- $repositoryName := .Values.openvpnHub.image.repository -}}
+{{- $tag := .Values.openvpnHub.image.tag | default .Chart.AppVersion -}}
+{{- if $registryName }}
+{{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
+{{- else }}
+{{- printf "%s:%s" $repositoryName $tag -}}
+{{- end }}
+{{- end }}
+
+{{- define "gatekey.openvpnSpoke.image" -}}
+{{- $registryName := .Values.global.imageRegistry | default "" -}}
+{{- $repositoryName := .Values.openvpnSpoke.image.repository -}}
+{{- $tag := .Values.openvpnSpoke.image.tag | default .Chart.AppVersion -}}
+{{- if $registryName }}
+{{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
+{{- else }}
+{{- printf "%s:%s" $repositoryName $tag -}}
+{{- end }}
+{{- end }}
+
+{{- define "gatekey.wireguardGateway.image" -}}
+{{- $registryName := .Values.global.imageRegistry | default "" -}}
+{{- $repositoryName := .Values.wireguardGateway.image.repository -}}
+{{- $tag := .Values.wireguardGateway.image.tag | default .Chart.AppVersion -}}
+{{- if $registryName }}
+{{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
+{{- else }}
+{{- printf "%s:%s" $repositoryName $tag -}}
+{{- end }}
+{{- end }}
+
+{{- define "gatekey.wireguardHub.image" -}}
+{{- $registryName := .Values.global.imageRegistry | default "" -}}
+{{- $repositoryName := .Values.wireguardHub.image.repository -}}
+{{- $tag := .Values.wireguardHub.image.tag | default .Chart.AppVersion -}}
+{{- if $registryName }}
+{{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
+{{- else }}
+{{- printf "%s:%s" $repositoryName $tag -}}
+{{- end }}
+{{- end }}
+
+{{- define "gatekey.wireguardSpoke.image" -}}
+{{- $registryName := .Values.global.imageRegistry | default "" -}}
+{{- $repositoryName := .Values.wireguardSpoke.image.repository -}}
+{{- $tag := .Values.wireguardSpoke.image.tag | default .Chart.AppVersion -}}
 {{- if $registryName }}
 {{- printf "%s/%s:%s" $registryName $repositoryName $tag -}}
 {{- else }}

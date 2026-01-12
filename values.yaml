@@ -139,7 +139,7 @@ web:
     type: ClusterIP
     port: 8080
     annotations: {}
-  
+
   # Ingress (optional)
   ingress:
     enabled: false
@@ -151,7 +151,7 @@ web:
           - path: /
             pathType: Prefix
     tls: []
-  
+
   # Health checks
   livenessProbe:
     httpGet:
@@ -161,7 +161,7 @@ web:
     periodSeconds: 10
     timeoutSeconds: 3
     failureThreshold: 3
-  
+
   readinessProbe:
     httpGet:
       path: /health
@@ -170,11 +170,263 @@ web:
     periodSeconds: 5
     timeoutSeconds: 3
     failureThreshold: 3
-  
+
   # Node selection
   nodeSelector: {}
   tolerations: []
   affinity: {}
+
+# OpenVPN Gateway (standalone VPN gateway)
+openvpnGateway:
+  enabled: false
+  replicaCount: 1
+
+  image:
+    repository: dyetech/gatekey-gateway
+    tag: "1.2.2"
+    pullPolicy: IfNotPresent
+
+  # Service configuration
+  service:
+    type: LoadBalancer
+    port: 1194
+    protocol: UDP
+    annotations: {}
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  # Pod security - requires NET_ADMIN for VPN
+  podSecurityContext:
+    runAsNonRoot: false
+
+  securityContext:
+    capabilities:
+      add:
+        - NET_ADMIN
+
+  # Node selection
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  # Extra environment variables
+  extraEnv: []
+
+# OpenVPN Hub (mesh networking hub)
+openvpnHub:
+  enabled: false
+  replicaCount: 1
+
+  image:
+    repository: dyetech/gatekey-hub
+    tag: "1.2.2"
+    pullPolicy: IfNotPresent
+
+  # Service configuration
+  service:
+    type: LoadBalancer
+    port: 1194
+    protocol: UDP
+    annotations: {}
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  # Pod security - requires NET_ADMIN for VPN
+  podSecurityContext:
+    runAsNonRoot: false
+
+  securityContext:
+    capabilities:
+      add:
+        - NET_ADMIN
+
+  # Node selection
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  # Extra environment variables
+  extraEnv: []
+
+# OpenVPN Spoke (mesh networking spoke - connects to hub)
+openvpnSpoke:
+  enabled: false
+  replicaCount: 1
+
+  image:
+    repository: dyetech/gatekey-mesh-gateway
+    tag: "1.2.2"
+    pullPolicy: IfNotPresent
+
+  # Hub connection settings
+  hubAddress: ""
+  hubPort: 1194
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  # Pod security - requires NET_ADMIN for VPN
+  podSecurityContext:
+    runAsNonRoot: false
+
+  securityContext:
+    capabilities:
+      add:
+        - NET_ADMIN
+
+  # Node selection
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  # Extra environment variables
+  extraEnv: []
+
+# WireGuard Gateway (standalone VPN gateway)
+wireguardGateway:
+  enabled: false
+  replicaCount: 1
+
+  image:
+    repository: dyetech/gatekey-wireguard-gateway
+    tag: "1.2.2"
+    pullPolicy: IfNotPresent
+
+  # Service configuration
+  service:
+    type: LoadBalancer
+    port: 51820
+    protocol: UDP
+    annotations: {}
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  # Pod security - requires NET_ADMIN for VPN
+  podSecurityContext:
+    runAsNonRoot: false
+
+  securityContext:
+    capabilities:
+      add:
+        - NET_ADMIN
+
+  # Node selection
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  # Extra environment variables
+  extraEnv: []
+
+# WireGuard Hub (mesh networking hub)
+wireguardHub:
+  enabled: false
+  replicaCount: 1
+
+  image:
+    repository: dyetech/gatekey-wireguard-hub
+    tag: "1.2.2"
+    pullPolicy: IfNotPresent
+
+  # Service configuration
+  service:
+    type: LoadBalancer
+    port: 51820
+    protocol: UDP
+    annotations: {}
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  # Pod security - requires NET_ADMIN for VPN
+  podSecurityContext:
+    runAsNonRoot: false
+
+  securityContext:
+    capabilities:
+      add:
+        - NET_ADMIN
+
+  # Node selection
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  # Extra environment variables
+  extraEnv: []
+
+# WireGuard Spoke (mesh networking spoke - connects to hub)
+wireguardSpoke:
+  enabled: false
+  replicaCount: 1
+
+  image:
+    repository: dyetech/gatekey-wireguard-mesh-gateway
+    tag: "1.2.2"
+    pullPolicy: IfNotPresent
+
+  # Hub connection settings
+  hubAddress: ""
+  hubPort: 51820
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  # Pod security - requires NET_ADMIN for VPN
+  podSecurityContext:
+    runAsNonRoot: false
+
+  securityContext:
+    capabilities:
+      add:
+        - NET_ADMIN
+
+  # Node selection
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  # Extra environment variables
+  extraEnv: []
 
 # PostgreSQL Database
 postgresql:

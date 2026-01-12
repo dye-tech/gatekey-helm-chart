@@ -1,0 +1,21 @@
+{{- if .Values.openvpnHub.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gatekey.fullname" . }}-openvpn-hub
+  labels:
+    {{- include "gatekey.openvpnHub.labels" . | nindent 4 }}
+  {{- with .Values.openvpnHub.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.openvpnHub.service.type }}
+  ports:
+    - port: {{ .Values.openvpnHub.service.port }}
+      targetPort: openvpn
+      protocol: {{ .Values.openvpnHub.service.protocol | default "UDP" }}
+      name: openvpn
+  selector:
+    {{- include "gatekey.openvpnHub.selectorLabels" . | nindent 4 }}
+{{- end }}

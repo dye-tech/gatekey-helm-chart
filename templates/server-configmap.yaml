@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "gatekey.server.labels" . | nindent 4 }}
 data:
-  gatex.yaml: |
+  gatekey.yaml: |
     server:
       address: "{{ .Values.config.server.address }}"
       tls_enabled: {{ .Values.config.server.tlsEnabled }}

@@ -2,8 +2,8 @@ apiVersion: v2
 name: gatekey
 description: GateKey Zero-Trust VPN - A modern zero-trust VPN control plane
 type: application
-version: 1.3.0
-appVersion: "1.2.2"
+version: 1.4.0
+appVersion: "1.5.1"
 keywords:
   - vpn
   - zero-trust

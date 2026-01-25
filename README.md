@@ -606,7 +606,7 @@ helm install gatekey-gateway gatekey/gatekey -n gatekey \
 | `server.enabled` | Enable GateKey server | `true` |
 | `server.replicaCount` | Number of server replicas | `1` |
 | `server.image.repository` | Server image repository | `dyetech/gatekey-server` |
-| `server.image.tag` | Server image tag | `1.2.2` |
+| `server.image.tag` | Server image tag | `1.5.1` |
 
 ### Web UI Component
 
@@ -615,7 +615,7 @@ helm install gatekey-gateway gatekey/gatekey -n gatekey \
 | `web.enabled` | Enable GateKey web UI | `true` |
 | `web.replicaCount` | Number of web UI replicas | `2` |
 | `web.image.repository` | Web image repository | `dyetech/gatekey-web` |
-| `web.image.tag` | Web image tag | `1.2.2` |
+| `web.image.tag` | Web image tag | `1.5.1` |
 
 ### OpenVPN Gateway
 
@@ -763,31 +763,7 @@ secrets:
 
 ## Architecture Overview
 
-```
-                    ┌─────────────────────────────────────┐
-                    │         Central Cluster             │
-                    │  ┌─────────┐  ┌─────────┐          │
-                    │  │ Server  │  │   Web   │          │
-                    │  └────┬────┘  └─────────┘          │
-                    │       │                            │
-                    │  ┌────┴────┐                       │
-                    │  │PostgreSQL│                      │
-                    │  └─────────┘                       │
-                    └─────────────────────────────────────┘
-                                    │
-                    ┌───────────────┼───────────────┐
-                    │               │               │
-           ┌────────▼────────┐ ┌────▼────┐ ┌───────▼───────┐
-           │  Edge Cluster A │ │  AWS    │ │ Edge Cluster B│
-           │  ┌───────────┐  │ │┌───────┐│ │ ┌───────────┐ │
-           │  │  OpenVPN  │  │ ││WireGrd││ │ │   Hub     │ │
-           │  │  Gateway  │  │ ││Gateway││ │ └─────┬─────┘ │
-           │  └───────────┘  │ │└───────┘│ │       │       │
-           └─────────────────┘ └─────────┘ │ ┌─────▼─────┐ │
-                                           │ │   Spoke   │ │
-                                           │ └───────────┘ │
-                                           └───────────────┘
-```
+![GateKey Architecture](docs/architecture.svg)
 
 ## Upgrading
 

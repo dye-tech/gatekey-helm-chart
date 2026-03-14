@@ -20,7 +20,7 @@ server:
   
   image:
     repository: dyetech/gatekey-server
-    tag: "1.7.3"
+    tag: "1.7.4"
     pullPolicy: IfNotPresent
   
   # Service account
@@ -125,7 +125,7 @@ web:
 
   image:
     repository: dyetech/gatekey-web
-    tag: "1.7.3"
+    tag: "1.7.4"
     pullPolicy: IfNotPresent
 
   # Resource limits
@@ -186,7 +186,7 @@ openvpnGateway:
 
   image:
     repository: dyetech/gatekey-gateway
-    tag: "1.7.3"
+    tag: "1.7.4"
     pullPolicy: IfNotPresent
 
   # Gateway authentication token (from GateKey server admin panel)
@@ -235,7 +235,7 @@ openvpnHub:
 
   image:
     repository: dyetech/gatekey-hub
-    tag: "1.7.3"
+    tag: "1.7.4"
     pullPolicy: IfNotPresent
 
   # Hub authentication token (from GateKey server admin panel)
@@ -283,7 +283,7 @@ openvpnSpoke:
 
   image:
     repository: dyetech/gatekey-mesh-gateway
-    tag: "1.7.3"
+    tag: "1.7.4"
     pullPolicy: IfNotPresent
 
   # Spoke authentication token (from GateKey server admin panel)
@@ -328,7 +328,7 @@ wireguardGateway:
 
   image:
     repository: dyetech/gatekey-wireguard-gateway
-    tag: "1.7.3"
+    tag: "1.7.4"
     pullPolicy: IfNotPresent
 
   # Gateway authentication token (from GateKey server admin panel)
@@ -376,7 +376,7 @@ wireguardHub:
 
   image:
     repository: dyetech/gatekey-wireguard-hub
-    tag: "1.7.3"
+    tag: "1.7.4"
     pullPolicy: IfNotPresent
 
   # Hub authentication token (from GateKey server admin panel)
@@ -424,7 +424,7 @@ wireguardSpoke:
 
   image:
     repository: dyetech/gatekey-wireguard-mesh-gateway
-    tag: "1.7.3"
+    tag: "1.7.4"
     pullPolicy: IfNotPresent
 
   # Spoke authentication token (from GateKey server admin panel)
